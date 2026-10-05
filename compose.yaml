@@ -1,0 +1,15 @@
+services:
+  postgres:
+    image: postgres:17
+    container_name: orderflow-postgres
+    environment:
+      POSTGRES_DB: orderflow
+      POSTGRES_USER: of1
+      POSTGRES_PASSWORD: joke4567
+    ports:
+      - "5432:5432"
+    volumes:
+      - orderflow-postgres-data:/var/lib/postgresql/data
+
+volumes:
+  orderflow-postgres-data:
