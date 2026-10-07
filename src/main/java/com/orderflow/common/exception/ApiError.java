@@ -1,6 +1,7 @@
 package com.orderflow.common.exception;
 
 import java.time.LocalDateTime;
+import java.util.Map;
 
 public record ApiError(
     LocalDateTime timestamp,
@@ -8,6 +9,7 @@ public record ApiError(
     String error,
     String code,
     String message,
-    String path
+    String path,
+    Map<String, String> fieldErrors
 ) {
 }
