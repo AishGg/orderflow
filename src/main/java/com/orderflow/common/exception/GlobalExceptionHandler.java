@@ -63,4 +63,21 @@ public class GlobalExceptionHandler {
         );
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(apiError);
     }
+
+    @ExceptionHandler(ProductNotFoundException.class)
+    public  ResponseEntity<ApiError> handleProductNotFound(
+        ProductNotFoundException exception,
+        HttpServletRequest request
+    ){
+        ApiError apiError = new ApiError(
+            LocalDateTime.now(),
+            HttpStatus.NOT_FOUND.value(),
+            HttpStatus.NOT_FOUND.getReasonPhrase(),
+            "PRODUCT_NOT_FOUND",
+            exception.getMessage(),
+            request.getRequestURI(),
+            null
+        );
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(apiError);
+    }
 }

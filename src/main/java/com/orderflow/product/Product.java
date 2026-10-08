@@ -53,6 +53,22 @@ public class Product {
         this.updatedAt = now;
     }
 
+    public void updateDetails(
+        String name,
+        String description,
+        BigDecimal price
+    ){
+       this.name = name;
+       this.description = description;
+       this.price = price;
+       this.updatedAt = LocalDateTime.now();
+    }
+
+    public void deactivate(){
+        this.active = false;
+        this.updatedAt = LocalDateTime.now();
+    }
+
     public Long getId() {
         return id;
     }
