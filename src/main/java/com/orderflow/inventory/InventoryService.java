@@ -68,6 +68,9 @@ public class InventoryService {
     ){
         Inventory inventory = inventoryRepository.findByProductId(productId).orElseThrow(() -> new InventoryNotFoundException(productId));
         inventory.addStock(request.quantity());
+
+        inventoryRepository.flush();
+
         return toResponse(inventory);
     }
 
@@ -78,6 +81,9 @@ public class InventoryService {
     ){
         Inventory inventory = inventoryRepository.findByProductId(productId).orElseThrow(() -> new InventoryNotFoundException(productId));
         inventory.removeStock(request.quantity());
+
+        inventoryRepository.flush();
+
         return toResponse(inventory);
     }
 }

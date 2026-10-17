@@ -14,6 +14,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 
 @RestControllerAdvice 
 public class GlobalExceptionHandler {
@@ -131,6 +132,24 @@ public class GlobalExceptionHandler {
             HttpStatus.CONFLICT.getReasonPhrase(),
             "INSUFFICIENT_STOCK", 
             exception.getMessage(),
+            request.getRequestURI(),
+            null
+        );
+
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
+    }
+
+    @ExceptionHandler(ObjectOptimisticLockingFailureException.class)
+    public ResponseEntity<ApiError> handleOptimisticLockingFailure(
+        ObjectOptimisticLockingFailureException exception,
+        HttpServletRequest request
+    ){
+        ApiError error = new ApiError(
+            LocalDateTime.now(),
+            HttpStatus.CONFLICT.value(),
+            HttpStatus.CONFLICT.getReasonPhrase(),
+            "CONCURRENT_UPDATE", 
+            "Inventory was modified by another request. Please retry.",
             request.getRequestURI(),
             null
         );
