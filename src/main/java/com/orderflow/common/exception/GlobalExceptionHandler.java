@@ -4,6 +4,8 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.hibernate.jdbc.Expectation;
+import org.springframework.cglib.core.Local;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
@@ -80,4 +82,22 @@ public class GlobalExceptionHandler {
         );
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(apiError);
     }
+
+     @ExceptionHandler(InventoryAlreadyExistsException.class)
+     public ResponseEntity<ApiError> handleInventoryAlreadyExists(
+        InventoryAlreadyExistsException exception,
+        HttpServletRequest request
+     ){
+        ApiError error = new ApiError(
+            LocalDateTime.now(),
+            HttpStatus.CONFLICT.value(),
+            HttpStatus.CONFLICT.getReasonPhrase(),
+            "INVENTORY_ALREADY_EXISTS",
+            exception.getMessage(),
+            request.getRequestURI(),
+            null
+        );
+
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
+     }
 }
