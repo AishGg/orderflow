@@ -4,6 +4,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -33,7 +34,12 @@ public class inventoryController {
         return inventoryService.create(productId, request);
     }
 
-    @GetMapping ("/{productId}/add")
+    @GetMapping("/{productId}")
+    public InventoryResponse getInventory(@PathVariable Long productId){
+        return inventoryService.getByProductId(productId);
+    }
+
+    @PutMapping  ("/{productId}/add")
     public InventoryResponse addStock(
         @PathVariable long productId,
         @Valid @RequestBody StockAdjustmentRequest request
@@ -41,7 +47,7 @@ public class inventoryController {
         return inventoryService.addStock(productId, request);
     }
 
-    @GetMapping ("/{productId}/remove")
+    @PutMapping  ("/{productId}/remove")
     public InventoryResponse removeStock(
         @PathVariable long productId,
         @Valid @RequestBody StockAdjustmentRequest request

@@ -1,5 +1,6 @@
 package com.orderflow.common.exception;
 
+import java.security.PublicKey;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
@@ -83,8 +84,8 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(apiError);
     }
 
-     @ExceptionHandler(InventoryAlreadyExistsException.class)
-     public ResponseEntity<ApiError> handleInventoryAlreadyExists(
+    @ExceptionHandler(InventoryAlreadyExistsException.class)
+    public ResponseEntity<ApiError> handleInventoryAlreadyExists(
         InventoryAlreadyExistsException exception,
         HttpServletRequest request
      ){
@@ -99,5 +100,42 @@ public class GlobalExceptionHandler {
         );
 
         return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
-     }
+    }
+
+    @ExceptionHandler(InventoryNotFoundException.class)
+    public ResponseEntity<ApiError> handleInvenotryNotFound(
+        InventoryNotFoundException exception,
+        HttpServletRequest request
+    ){
+        ApiError error = new ApiError(
+            LocalDateTime.now(),
+            HttpStatus.CONFLICT.value(),
+            HttpStatus.CONFLICT.getReasonPhrase(),
+            "INVENTORY_NOT_FOUND", 
+            exception.getMessage(),
+            request.getRequestURI(),
+            null
+        );
+
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+    }
+
+    @ExceptionHandler(InsufficientStockException.class)
+    public ResponseEntity<ApiError> handleInsufficientStock(
+        InsufficientStockException exception,
+        HttpServletRequest request
+    ){
+        ApiError error = new ApiError(
+            LocalDateTime.now(),
+            HttpStatus.CONFLICT.value(),
+            HttpStatus.CONFLICT.getReasonPhrase(),
+            "INSUFFICIENT_STOCK", 
+            exception.getMessage(),
+            request.getRequestURI(),
+            null
+        );
+
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
+    }
+
 }
