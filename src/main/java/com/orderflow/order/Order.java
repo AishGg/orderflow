@@ -34,7 +34,7 @@ public class Order {
     )
     private List<OrderItem> items = new ArrayList<>();
 
-    @Column (name = "updated_at", nullable = false)
+    @Column (name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
     @Column (name = "updated_at", nullable = false)
@@ -55,6 +55,13 @@ public class Order {
 
         return order;
     }
+    public void addItem(OrderItem item) {
+        items.add(item);
+        item.assignToOrder(this);
+
+        totalAmount = totalAmount.add(item.getLineTotal());
+    }
+
 
     public Long getId() {
         return id;
