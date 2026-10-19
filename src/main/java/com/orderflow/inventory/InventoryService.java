@@ -15,8 +15,8 @@ import com.orderflow.product.ProductRepository;
 @Service
 public class InventoryService {
 
-    final ProductRepository productRepository;
-    final InventoryRepository inventoryRepository;
+    private final ProductRepository productRepository;
+    private final InventoryRepository inventoryRepository;
 
     public InventoryService(
             InventoryRepository inventoryRepository,
