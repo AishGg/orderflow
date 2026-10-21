@@ -1,11 +1,19 @@
 package com.orderflow.order;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.orderflow.common.exception.DuplicateProductInOrderException;
 import com.orderflow.common.exception.InventoryNotFoundException;
+import com.orderflow.common.exception.OrderAlreadyCancelledException;
+import com.orderflow.common.exception.OrderNotFoundException;
+import com.orderflow.common.exception.ProductInactiveException;
 import com.orderflow.common.exception.ProductNotFoundException;
 import com.orderflow.inventory.Inventory;
 import com.orderflow.inventory.InventoryRepository;
@@ -15,6 +23,7 @@ import com.orderflow.order.dto.OrderItemResponse;
 import com.orderflow.order.dto.OrderResponse;
 import com.orderflow.product.Product;
 import com.orderflow.product.ProductRepository;
+import com.orderflow.product.dto.PageResponse;
 
 @Service
 public class OrderService {
@@ -63,12 +72,23 @@ public class OrderService {
 
     @Transactional
     public OrderResponse create(CreateOrderRequest request) {
+        Set<Long> productIds = new HashSet<>();
         Order order = Order.create();
 
+       
         for (CreateOrderItemRequest itemRequest : request.items()) {
+
+             if(!productIds.add(itemRequest.productId())){
+                throw new DuplicateProductInOrderException(itemRequest.productId());
+            }
+
             Product product = productRepository
                     .findById(itemRequest.productId())
                     .orElseThrow(() -> new ProductNotFoundException(itemRequest.productId()));
+
+            if (!product.isActive()) {
+                throw new ProductInactiveException(product.getId());
+            }
 
             Inventory inventory = inventoryRepository.findByProductId(product.getId())
             .orElseThrow(() -> new InventoryNotFoundException(product.getId()));
@@ -85,5 +105,46 @@ public class OrderService {
         orderRepository.flush();
 
         return toResponse(savedOrder);
+    }
+
+    @Transactional
+    public OrderResponse cancel(Long orderId) {
+        Order order = orderRepository.findById(orderId)
+        .orElseThrow(() -> new OrderNotFoundException(orderId));
+
+        if(order.getStatus() == OrderStatus.CANCELLED){
+            throw new OrderAlreadyCancelledException(orderId);
+        }
+
+        for(OrderItem item :  order.getItems()){
+            Long productId = item.getProduct().getId();
+
+            Inventory inventory = inventoryRepository.findByProductId(productId)
+            .orElseThrow(() -> new InventoryNotFoundException(productId));
+
+            inventory.addStock(item.getQuantity());
+        }
+
+        order.cancel();
+        inventoryRepository.flush();
+        orderRepository.flush();
+
+        return toResponse(order);
+    }
+
+    @Transactional (readOnly = true)
+    public OrderResponse getById(Long id){
+        Order order = orderRepository.findById(id)
+        .orElseThrow(() -> new OrderNotFoundException(id));
+
+        return toResponse(order);
+    }
+
+    @Transactional (readOnly = true)
+    public PageResponse<OrderResponse> getAll(Pageable pageable){
+        Page<OrderResponse> page = orderRepository.findAll(pageable)
+        .map(this::toResponse);
+
+        return PageResponse.from(page);
     }
 }
