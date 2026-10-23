@@ -90,8 +90,8 @@ public class OrderService {
                 throw new ProductInactiveException(product.getId());
             }
 
-            Inventory inventory = inventoryRepository.findByProductId(product.getId())
-            .orElseThrow(() -> new InventoryNotFoundException(product.getId()));
+            Inventory inventory = inventoryRepository.findByProductId(itemRequest.productId())
+            .orElseThrow(() -> new InventoryNotFoundException(itemRequest.productId()));
             
             inventory.removeStock(itemRequest.quantity());
 
