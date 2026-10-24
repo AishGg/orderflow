@@ -1,7 +1,10 @@
 package com.orderflow.order;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -17,6 +20,8 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.orderflow.common.exception.InsufficientStockException;
+import com.orderflow.common.exception.ProductNotFoundException;
 import com.orderflow.inventory.Inventory;
 import com.orderflow.inventory.InventoryRepository;
 import com.orderflow.order.dto.CreateOrderItemRequest;
@@ -83,6 +88,46 @@ public class OrderServiceTest {
         verify(inventoryRepository).flush();
         verify(orderRepository).flush();
 
+    }
+
+    @Test 
+    void shouldThrowWhenProductDoesNotExist(){
+        
+        CreateOrderRequest request = new CreateOrderRequest(List.of(
+            new CreateOrderItemRequest(99L, 2)
+        ));
+
+        when(productRepository.findById(99L)).thenReturn(Optional.empty());
+
+        assertThrows(ProductNotFoundException.class, () -> orderService.create(request));
+        verify(orderRepository, never()).save(any(Order.class));
+        verify(inventoryRepository, never())
+            .findByProductId(anyLong());
+        
+    }
+
+    @Test 
+    void shouldThrowWhenStockIsInsufficient(){
+         Product product = new Product(
+            "TEST-001",
+            "Test Product",
+            "Test description",
+            new BigDecimal("50.00")
+        );
+
+        Inventory inventory = new Inventory(product, 10);
+
+        CreateOrderRequest request = new CreateOrderRequest(List.of(
+            new CreateOrderItemRequest(1L, 11)
+        ));
+
+        when(productRepository.findById(1L)).thenReturn(Optional.of(product));
+        when(inventoryRepository.findByProductId(1L)).thenReturn(Optional.of(inventory));
+        assertThrows(InsufficientStockException.class, () -> orderService.create(request));
+
+        verify(orderRepository, never()).save(any(Order.class));
+
+        assertEquals(10, inventory.getQuantity());
     }
 
 }
