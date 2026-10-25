@@ -4,10 +4,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.lang.foreign.Linker.Option;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
@@ -21,6 +23,7 @@ import org.mockito.MockitoAnnotations;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.orderflow.common.exception.InsufficientStockException;
+import com.orderflow.common.exception.OrderAlreadyCancelledException;
 import com.orderflow.common.exception.ProductNotFoundException;
 import com.orderflow.inventory.Inventory;
 import com.orderflow.inventory.InventoryRepository;
@@ -129,5 +132,50 @@ public class OrderServiceTest {
 
         assertEquals(10, inventory.getQuantity());
     }
+
+    @Test 
+    void shouldRestoreInventoryWhenOrderIsCancelled(){
+
+        Product product = mock(Product.class);
+
+        when(product.getId()).thenReturn(1L);
+        when(product.getSku()).thenReturn("TEST-001");
+        when(product.getName()).thenReturn("Test Product");
+        when(product.getPrice()).thenReturn(new BigDecimal("50.00"));
+
+
+        Inventory inventory = new Inventory(product, 7);
+
+        Order order = Order.create();
+        OrderItem item = new OrderItem(product, 3);
+        order.addItem(item);
+
+        when(orderRepository.findById(1L)).thenReturn(Optional.of(order));
+        when(inventoryRepository.findByProductId(1L)).thenReturn(Optional.of(inventory));
+
+        OrderResponse response = orderService.cancel(1L);
+
+        assertEquals(OrderStatus.CANCELLED, response.status());
+        assertEquals(10, inventory.getQuantity());
+
+        verify(inventoryRepository).flush();
+        verify(orderRepository).flush();
+    }
+
+    @Test 
+    void shouldThrowWhenOrderIsAlreadyCancelled(){
+        Order order = Order.create();
+        order.cancel();
+
+        when(orderRepository.findById(1L)).thenReturn(Optional.of(order));
+        
+        assertThrows(OrderAlreadyCancelledException.class, () -> orderService.cancel(1L));
+
+        verify(inventoryRepository, never()).findByProductId(anyLong());
+
+        verify(orderRepository, never()).flush();
+    }
+
+
 
 }
