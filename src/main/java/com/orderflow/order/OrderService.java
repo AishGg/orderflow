@@ -73,7 +73,6 @@ public class OrderService {
     @Transactional
     public OrderResponse create(CreateOrderRequest request) {
         Set<Long> productIds = new HashSet<>();
-        Order order = Order.create();
 
        
         for (CreateOrderItemRequest itemRequest : request.items()) {
@@ -81,6 +80,10 @@ public class OrderService {
              if(!productIds.add(itemRequest.productId())){
                 throw new DuplicateProductInOrderException(itemRequest.productId());
             }
+        }
+        Order order = Order.create();
+
+        for (CreateOrderItemRequest itemRequest : request.items()) {
 
             Product product = productRepository
                     .findById(itemRequest.productId())

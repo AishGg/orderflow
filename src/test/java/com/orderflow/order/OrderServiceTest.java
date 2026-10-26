@@ -22,7 +22,9 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.orderflow.common.exception.DuplicateProductInOrderException;
 import com.orderflow.common.exception.InsufficientStockException;
+import com.orderflow.common.exception.InventoryNotFoundException;
 import com.orderflow.common.exception.OrderAlreadyCancelledException;
 import com.orderflow.common.exception.ProductNotFoundException;
 import com.orderflow.inventory.Inventory;
@@ -176,6 +178,39 @@ public class OrderServiceTest {
         verify(orderRepository, never()).flush();
     }
 
+    @Test
+    void shouldThrowWhenInventoryDoesNotExist(){
+        Product product = new Product(
+            "TEST-001",
+            "Test Product",
+            "Test description",
+            new BigDecimal("50.00")
+        );
 
+        when(productRepository.findById(1L)).thenReturn(Optional.of(product));
+        when(inventoryRepository.findByProductId(1L)).thenReturn(Optional.empty());
+
+        CreateOrderRequest request = new CreateOrderRequest(List.of(
+            new CreateOrderItemRequest(1L, 2)
+        ));
+
+        assertThrows(InventoryNotFoundException.class, () -> orderService.create(request));
+
+        verify(orderRepository, never()).save(any(Order.class));
+    }
+
+    @Test 
+    void shouldRejectDuplicateProductInOrder(){
+
+        CreateOrderRequest request = new CreateOrderRequest(List.of(
+            new CreateOrderItemRequest(1L, 2),
+            new CreateOrderItemRequest(1L, 2)
+        ));
+
+        assertThrows(DuplicateProductInOrderException.class, () -> orderService.create(request));
+
+        verify(orderRepository, never()).save(any(Order.class));
+
+    }
 
 }
