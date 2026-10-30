@@ -22,6 +22,7 @@ import com.orderflow.inventory.InventoryRepository;
 import com.orderflow.order.Order;
 import com.orderflow.order.OrderRepository;
 import com.orderflow.order.OrderService;
+import com.orderflow.order.OrderStatus;
 import com.orderflow.order.dto.CreateOrderItemRequest;
 import com.orderflow.order.dto.CreateOrderRequest;
 import com.orderflow.order.dto.OrderResponse;
@@ -119,6 +120,40 @@ public class OrderFlowIntegrationTest {
         assertEquals(orderCountBefore, orderRepository.count());
 
 
+    }
+
+    @Test 
+    void shouldRestoreInventoryWhenOrderIsCancelled(){
+        Product product = new Product(
+            "keyboard big",
+            "rollback-keyboard-002",
+            "Test keyboard big",
+            new BigDecimal("15.00"));
+
+        Product savedProduct = productRepository.save(product);
+
+        
+        Inventory inventory = new Inventory(savedProduct, 10);
+        inventoryRepository.save(inventory);
+        long orderCountBefore = orderRepository.count();
+
+        CreateOrderRequest request = new CreateOrderRequest(List.of(
+            new CreateOrderItemRequest(savedProduct.getId(), 3)
+        ));
+
+        OrderResponse order = orderService.create(request);
+        Inventory savedInventory = inventoryRepository.findByProductId(savedProduct.getId()).orElseThrow();
+        assertEquals(7, savedInventory.getQuantity());
+
+        orderService.cancel(order.id());
+        Inventory restoredInventory = inventoryRepository.findByProductId(savedProduct.getId()).orElseThrow();
+        assertEquals(10, restoredInventory.getQuantity());
+        
+        Order cancelledOrder = orderRepository.findById(order.id()).orElseThrow();
+        assertEquals(OrderStatus.CANCELLED, cancelledOrder.getStatus());
+        assertEquals(orderCountBefore + 1 , orderRepository.count());
+
+        
     }
     
 }
